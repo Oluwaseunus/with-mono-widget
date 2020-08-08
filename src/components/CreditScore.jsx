@@ -1,95 +1,53 @@
-import React from 'react';
 import { fetchRequest } from '../utils';
 
-class CreditScore extends React.Component {
-  state = {
-    months: [],
-    balance: 0,
-    salaries: [],
-    burnRates: [],
-    totalCredit: 0,
-    totalDebit: 0,
-  };
-
-  async componentDidUpdate(prevProps) {
-    if (prevProps.id !== this.props.id && this.props.id) {
-      this.runner();
-    }
+class CreditScore {
+  constructor() {
+    this.balance = 0;
+    this.months = [];
   }
 
-  calculateData = () => {
-    const { months } = this.state;
-    const burnRates = [],
-      salaries = [];
-
-    let totalDebit = 0,
-      totalCredit = 0;
-
-    months.forEach((month) => {
-      let debit = 0,
-        credit = 0;
-
-      month.forEach((entry) => {
-        if (entry.type === 'debit') {
-          debit += entry.amount;
-          totalDebit += entry.amount;
-        } else {
-          credit += entry.amount;
-          totalCredit += entry.amount;
-
-          if (entry.narration.match(/salary/i)) {
-            salaries.push(entry.amount);
-          }
-        }
-      });
-
-      const burnRate = (debit / credit) * 100;
-      burnRates.push(burnRate);
-
-      console.log({
-        debit,
-        credit,
-        burnRate,
-      });
-    });
-
-    const sum = (accumulator, current) => accumulator + current;
-
-    console.log({
-      salaries,
-      totalDebit,
-      totalCredit,
-      averageSalary: salaries.reduce(sum) / 6,
-      averageBurnRate: burnRates.reduce(sum) / 6,
-    });
-  };
-
-  fetchAccountBalance = async () => {
+  fetchAccountBalance = async (id) => {
     const { balance = 0 } = await fetchRequest(
       {
-        url: `/accounts/${this.props.id}/balance`,
+        url: `/accounts/${id}`,
       },
       (err) => {
         console.err(`Couldn't fetch balance`, { err });
       }
     );
 
-    this.setState({ balance: Number(balance) });
+    this.balance = Number(balance);
   };
 
-  fetchAccountData = async () => {
-    const { id } = this.props;
-    const months = [[], [], [], [], [], []];
-    let next = true,
-      page = 0;
+  fetchAccountData = async (id) => {
+    const totalSalary = await this.fetchData(
+      id,
+      '&narration=salary&type=credit'
+    );
+    const totalDebits = await this.fetchData(id, '&type=debit');
+
+    return {
+      totalSalary,
+      totalDebits,
+      balance: this.balance,
+    };
+  };
+
+  fetchData = async (id, query) => {
+    let sum = 0,
+      page = 0,
+      next = true;
 
     while (next) {
       try {
         const response = await fetchRequest({
-          url: `/accounts/${id}/transactions?start=01-02-2020&end=01-07-2020&page=${++page}`,
+          url: `/accounts/${id}/transactions?start=01-02-2020&end=01-07-2020${
+            query || ''
+          }&page=${++page}`,
         });
+
         response.data.forEach((entry) => {
-          months[new Date(entry.date).getUTCMonth() - 1].push(entry);
+          sum += entry.amount;
         });
         next = response.paging.next;
       } catch (err) {
@@ -97,19 +55,13 @@ class CreditScore extends React.Component {
       }
     }
 
-    this.setState({ months });
+    return sum;
   };
 
-  runner = async () => {
-    await this.fetchAccountData();
-    await this.fetchAccountBalance();
-    this.calculateData();
-    this.props.calculateEligibility();
+  runner = async (id) => {
+    await this.fetchAccountBalance(id);
+    return await this.fetchAccountData(id);
   };
-
-  render() {
-    return <div></div>;
-  }
 }
 
-export default CreditScore;
+export default new CreditScore();

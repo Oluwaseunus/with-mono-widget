@@ -7,6 +7,7 @@ class App extends React.Component {
   state = {
     id: '',
     code: '',
+    status: '',
     loanAmount: 0,
   };
 
@@ -28,11 +29,34 @@ class App extends React.Component {
     });
   }
 
-  calculateEligibility = (data) => {
-    const { loanAmount } = this.state;
-    const { balance, averageBurnRate, averageSalary } = data;
+  async componentDidUpdate(_, prevState) {
+    if (prevState.id !== this.state.id && this.state.id) {
+      const data = await CreditScore.runner(this.state.id);
+      this.calculateEligibility(data);
+    }
+  }
 
-    // ideally, something would be done here.
+  calculateEligibility = (data) => {
+    // assuming 6 months is the history period and
+    // the number of months required to repay the loan.
+    const duration = 6;
+    const loanAmount = this.state.loanAmount * 100;
+    const { balance, totalSalary, totalDebits } = data;
+
+    const averageSalary = totalSalary / duration;
+
+    // assuming employment status doesn't change
+    // and the sum of salaries for the previous and next six months remains the same
+
+    const eligibility =
+      loanAmount < averageSalary ||
+      balance + loanAmount + averageSalary * duration - totalDebits >
+        loanAmount;
+
+    this.setState({
+      status: eligibility ? 'eligible' : 'not eligible',
+    });
+    this.connect.close();
   };
 
   connectWidget = (loanAmount) => {
@@ -61,13 +85,12 @@ class App extends React.Component {
   };
 
   render() {
+    const { status } = this.state;
+
     return (
       <div className='App'>
         <Form connect={this.connectWidget} />
-        <CreditScore
-          id={this.state.id}
-          calculateEligibility={this.calculateEligibility}
-        />
+        {status ? <div>You are {status} for this loan.</div> : null}
       </div>
     );
   }
