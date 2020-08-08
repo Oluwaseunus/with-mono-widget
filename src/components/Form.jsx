@@ -2,8 +2,8 @@ import React from 'react';
 
 class Form extends React.Component {
   state = {
-    email: 'oluwaseunus@gmail.com',
-    amount: 120000,
+    email: '',
+    amount: 0,
   };
 
   handleChange = (e) => {
@@ -37,7 +37,7 @@ class Form extends React.Component {
           onChange={this.handleChange}
         />
 
-        <button>Authenticate</button>
+        <button disabled={!(email && amount)}>Authenticate</button>
       </form>
     );
   }

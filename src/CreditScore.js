@@ -1,4 +1,4 @@
-import { fetchRequest } from "./utils";
+import { fetchRequest } from './utils';
 
 class CreditScore {
   constructor() {
@@ -9,7 +9,7 @@ class CreditScore {
   fetchAccountBalance = async (id) => {
     const { balance = 0 } = await fetchRequest(
       {
-        url: `/accounts/${id}`
+        url: `/accounts/${id}`,
       },
       (err) => {
         console.err(`Couldn't fetch balance`, { err });
@@ -22,14 +22,14 @@ class CreditScore {
   fetchAccountData = async (id) => {
     const totalSalary = await this.fetchData(
       id,
-      "&narration=salary&type=credit"
+      '&narration=salary&type=credit'
     );
-    const totalDebits = await this.fetchData(id, "&type=debit");
+    const totalDebits = await this.fetchData(id, '&type=debit');
 
     return {
       totalSalary,
       totalDebits,
-      balance: this.balance
+      balance: this.balance,
     };
   };
 
@@ -39,16 +39,18 @@ class CreditScore {
       next = true;
 
     while (next) {
+      let entries = 0;
       try {
         const response = await fetchRequest({
           url: `/accounts/${id}/transactions?start=01-02-2020&end=01-07-2020${
-            query || ""
-          }&page=${++page}`
+            query || ''
+          }&page=${++page}`,
         });
 
         response.data.forEach((entry) => {
-          sum += entry.amount;
+          entries += entry.amount;
         });
+        sum += entries;
         next = response.paging.next;
       } catch (err) {
         console.error(err);
