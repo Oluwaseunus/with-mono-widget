@@ -1,19 +1,18 @@
-import React from "react";
-import "./App.css";
-import Form from "./components/Form";
-import CreditScore from "./CreditScore";
+import React from 'react';
+import './App.css';
+import Form from './components/Form';
+import CreditScore from './CreditScore';
 
 class App extends React.Component {
   state = {
-    id: "",
-    code: "",
-    status: "",
-    loanAmount: 0
+    id: '',
+    code: '',
+    status: '',
+    loanAmount: 0,
   };
 
   componentDidMount() {
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log("dcloaded");
+    document.addEventListener('DOMContentLoaded', () => {
       const { Connect } = window;
 
       this.connect = new Connect(process.env.REACT_APP_PUBLIC_KEY, {
@@ -22,8 +21,8 @@ class App extends React.Component {
           this.getEnrolledAccount(response.code);
         },
         onClose: () => {
-          console.log("Widget closed.");
-        }
+          console.log('Widget closed.');
+        },
       });
 
       this.connect.setup();
@@ -55,7 +54,7 @@ class App extends React.Component {
         loanAmount;
 
     this.setState({
-      status: eligibility ? "eligible" : "not eligible"
+      status: eligibility ? 'eligible' : 'not eligible',
     });
     this.connect.close();
   };
@@ -69,19 +68,19 @@ class App extends React.Component {
     const { code } = this.state;
 
     try {
-      const response = await fetch("https://api.withmono.com/account/auth", {
-        method: "POST",
+      const response = await fetch('https://api.withmono.com/account/auth', {
+        method: 'POST',
         body: JSON.stringify({ code }),
         headers: {
-          "Content-Type": "application/json",
-          "mono-sec-key": process.env.REACT_APP_SECRET
-        }
+          'Content-Type': 'application/json',
+          'mono-sec-key': process.env.REACT_APP_SECRET,
+        },
       });
 
       const { id } = await response.json();
       this.setState({ id });
     } catch (err) {
-      console.error("Request failed!", { err });
+      console.error('Request failed!', { err });
     }
   };
 
@@ -89,7 +88,7 @@ class App extends React.Component {
     const { status } = this.state;
 
     return (
-      <div className="App">
+      <div className='App'>
         <Form connect={this.connectWidget} />
         {status ? <div>You are {status} for this loan.</div> : null}
       </div>
